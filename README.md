@@ -19,7 +19,7 @@ There is exactly **one decision authority**:
 
 ## Architecture
 
-![RevLoop Architecture](docs/revloop-architecture.jpeg)
+![RevLoop Architecture](./docs/revloop-architecture.png)
 
 For a detailed Windows PowerShell setup, testing, Razorpay Test Mode walkthrough, troubleshooting guide, and final verification checklist, see [`docs/RevLoop-RUNBOOK-Windows-PowerShell.md`](./docs/RevLoop-RUNBOOK-Windows-PowerShell.md).
 
@@ -63,7 +63,7 @@ cp .env.example .env                    # defaults: MOCK_MODE=true
 
 # offline research pipeline (also trains + saves the live model)
 python run_offline_pipeline.py          # → metrics/metrics.json, metrics/dashboard.html,
-                                        #   audit_runs/run_<id>.jsonl, models/recovery_model.pkl
+                                        #   audit_runs/audit JSONL, models/recovery_model.pkl
 
 # tests
 pytest tests/ -q
@@ -104,7 +104,7 @@ To reproduce the Test Mode flow, use [`docs/RevLoop-RUNBOOK-Windows-PowerShell.m
 
 ## Guardrails
 
-See `docs/guardrails.md`:
+See [`docs/guardrails.md`](./docs/guardrails.md):
 
 - max 3 attempts
 - 24h spacing (timestamp-based; offline uses a simulated clock — never sleeps)
@@ -141,8 +141,8 @@ The probability model is evaluated on a held-out 20% record split using Brier sc
 
 Agent recovery:       79.4%
 Baseline recovery:    57.2%
-Absolute improvement: 22.22 pp
-Relative lift:        38.83%
+Absolute improvement: +22.22 pp
+Relative lift:        +38.83%
 Net recovered:        ₹848,380.12
 Guardrail blocks:     37
 Exceptions:            0
@@ -188,12 +188,23 @@ frontend/    merchant UI with the full intelligence panel:
              diagnosis + confidence, P(recovery), EVs, chosen action,
              reasoning, guardrail results, link, net recovered
 
-tests/       37 tests covering guardrails, EV, fairness, revenue, state machine,
+tests/       tests covering guardrails, EV, fairness, revenue, state machine,
              webhook signature/dedup/transition, audit append-only behavior, API
 
 docs/        guardrails, provenance, recovery assumptions, compliance policy,
              architecture diagram, and Windows PowerShell runbook
 ```
+
+## AI responsibility boundaries
+
+RevLoop intentionally separates prediction, financial decision-making, execution, and communication:
+
+- The recovery model estimates `P(recovery | context, action)` for each candidate action.
+- The decision engine combines probability, amount, and intervention cost into Expected Value and selects the highest-value feasible action.
+- Deterministic guardrails independently decide whether the selected action is allowed.
+- Razorpay performs the payment-link execution and supplies the payment outcome webhook.
+- Groq is used **only** for customer-facing recovery message or escalation-script generation.
+- The LLM does **not** choose the financial action, payment amount, discount, or guardrail policy.
 
 ## Security
 
@@ -224,7 +235,7 @@ data/output/*
 The frozen implementation has been validated with:
 
 ```text
-37 automated tests: PASS
+Automated tests: PASS
 Offline evaluation: PASS
 Mock end-to-end recovery: PASS
 Real Razorpay Test Mode Payment Link: PASS
