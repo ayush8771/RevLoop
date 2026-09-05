@@ -30,16 +30,33 @@
       </div>
     </div>
 
-    <div class="metrics" id="metrics">
-      <div class="metric-card"><div class="metric-top"><span class="metric-label">Revenue at risk</span></div><div class="metric-value" id="m-at-risk">—</div></div>
-      <div class="metric-card"><div class="metric-top"><span class="metric-label">Net recovered</span></div><div class="metric-value" id="m-net">—</div></div>
-      <div class="metric-card"><div class="metric-top"><span class="metric-label">Discounts given</span></div><div class="metric-value" id="m-disc">—</div></div>
-      <div class="metric-card"><div class="metric-top"><span class="metric-label">Net recovery rate</span></div><div class="metric-value" id="m-rate">—</div></div>
+    <div class="stat-rail" id="metrics">
+      <div class="stat-hero">
+        <div class="stat-label">Revenue at risk</div>
+        <div class="stat-value" id="m-at-risk">—</div>
+      </div>
+      <div class="stat-hero positive">
+        <div class="stat-label">Net recovered</div>
+        <div class="stat-value" id="m-net">—</div>
+      </div>
+      <div class="stat-minor-group">
+        <div class="stat-minor">
+          <span class="stat-label">Discounts given</span>
+          <span class="stat-value" id="m-disc">—</span>
+        </div>
+        <div class="stat-minor">
+          <span class="stat-label">Net recovery rate</span>
+          <span class="stat-value" id="m-rate">—</span>
+        </div>
+      </div>
     </div>
-    <p class="honesty-note">Net recovered = gross − discounts. A ₹10,000 order recovered with a 10% discount counts as ₹9,000, not ₹10,000.</p>
+    <p class="honesty-note dashboard-note">Net recovered = gross − discounts. A ₹10,000 order recovered with a 10% discount counts as ₹9,000, not ₹10,000.</p>
 
     <div class="panel transactions-panel">
-      <div class="panel-header"><h3>Failed payments</h3></div>
+      <div class="panel-header">
+        <h3>Failed payments</h3>
+        <div class="state-counts" id="state-counts"></div>
+      </div>
       <div class="table-wrapper">
         <table class="ev-table" id="txn-table">
           <thead><tr>

@@ -85,7 +85,8 @@ def draft_message(action, txn, payment_link_url=None, discount_paise=0):
             headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
             json={
                 "model": GROQ_MODEL,
-                "max_tokens": 300,
+                "max_completion_tokens": 300,
+                "reasoning_effort": "low",
                 "messages": [
                     {"role": "system",
                      "content": ("You draft payment-recovery messages. You MUST follow this "
@@ -98,6 +99,8 @@ def draft_message(action, txn, payment_link_url=None, discount_paise=0):
         )
         resp.raise_for_status()
         text = resp.json()["choices"][0]["message"]["content"].strip()
+        if not text:
+            raise ValueError("Groq returned empty message content")
         return {"text": text, "generator": f"groq:{GROQ_MODEL}",
                 "grounded_on": "compliance_policy.md (policy-grounded generation)"}
     except Exception as exc:  # clean fallback on any API failure

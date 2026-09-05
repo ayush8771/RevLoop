@@ -17,50 +17,97 @@
       <a class="nav-item" href="index.html">Dashboard</a>
       <a class="nav-item" href="recoveries.html">Recoveries</a>
     </nav>
+    <div class="sidebar-bottom">
+      <span class="honesty-note" id="mode-note"></span>
+    </div>
   </aside>
 
   <main class="main">
-    <div class="panel transaction-hero">
-      <div class="panel-header">
-        <h2 id="txn-title">Transaction</h2>
-        <span id="txn-state"></span>
-      </div>
-      <div class="transaction-summary">
-        <div class="transaction-amount" id="txn-amount">—</div>
-        <div class="detail-list">
-          <div class="detail-row"><span class="detail-label">Error</span><span id="txn-error">—</span></div>
-          <div class="detail-row"><span class="detail-label">Attempts used</span><span id="txn-attempts">—</span></div>
-          <div class="detail-row"><span class="detail-label">Next allowed at</span><span id="txn-next-allowed">—</span></div>
-          <div class="detail-row"><span class="detail-label">Payment Link</span><span id="txn-link">—</span></div>
-          <div class="detail-row"><span class="detail-label">Recovery status</span><span id="txn-recovery-status">—</span></div>
-          <div class="detail-row"><span class="detail-label">Net recovered</span><span id="txn-net">—</span></div>
-        </div>
-      </div>
-      <div class="action-buttons">
-        <button class="primary" id="analyze-btn">Step 1 · Analyze — AI recommends</button>
-        <button id="execute-btn">Step 2 · Execute — guardrails authorize</button>
-        <button id="verify-btn">Verify payment</button>
-        <button id="mock-pay-btn" style="display:none">Simulate customer paying (mock)</button>
-        <button id="optout-btn">Customer opt-out</button>
-      </div>
-      <div id="flash" class="honesty-note"></div>
+
+    <!-- Static sequence legend: Diagnose -> Predict -> EV -> Guardrails
+         -> Execute -> Verify. This genuinely is the fixed pipeline the
+         product runs, so a numbered legend is informative here, not
+         decorative chrome. Steps fill in live as the transaction
+         progresses (see updateFlowLegend in transaction.js). -->
+    <div class="flow-legend" id="flow-legend">
+      <span class="step" data-step="1"><span class="step-num">1</span>Diagnose</span>
+      <span class="sep">→</span>
+      <span class="step" data-step="2"><span class="step-num">2</span>Predict</span>
+      <span class="sep">→</span>
+      <span class="step" data-step="3"><span class="step-num">3</span>Expected value</span>
+      <span class="sep">→</span>
+      <span class="step" data-step="4"><span class="step-num">4</span>Guardrails</span>
+      <span class="sep">→</span>
+      <span class="step" data-step="5"><span class="step-num">5</span>Execute</span>
+      <span class="sep">→</span>
+      <span class="step" data-step="6"><span class="step-num">6</span>Verify</span>
     </div>
 
-    <div class="intel-grid">
-      <div class="panel ai-panel">
-        <div class="panel-header"><h3>AI Diagnosis &amp; Recommendation</h3></div>
-        <div class="detail-list">
-          <div class="detail-row"><span class="detail-label">Customer context</span><span id="ai-context">—</span></div>
-          <div class="detail-row"><span class="detail-label">Diagnosis</span><span id="ai-diagnosis">—</span></div>
-          <div class="detail-row"><span class="detail-label">Confidence</span><span id="ai-confidence">—</span></div>
-          <div class="detail-row"><span class="detail-label">Method</span><span id="ai-method">—</span></div>
-          <div class="detail-row"><span class="detail-label">Selected action</span><span id="ai-action">—</span></div>
-          <div class="detail-row"><span class="detail-label">Approved discount</span><span id="ai-discount">—</span></div>
+    <!-- IDENTITY + STATUS + PAYMENT DETAILS — a page header, not
+         another card, with a compact two-column fact grid. -->
+    <div class="transaction-header">
+      <div class="transaction-identity">
+        <div class="transaction-identity-left">
+          <h2 id="txn-title">Transaction</h2>
+          <span id="txn-state"></span>
         </div>
-        <div class="reasoning-box" id="ai-reasoning">Run Analyze to produce a decision.</div>
-        <p class="honesty-note">P(recovery) values come from a model trained on <b>simulated</b> intervention outcomes (documented assumptions), not real-world labels.</p>
+        <div class="utility-row">
+          <button class="btn-utility" id="optout-btn">Customer opt-out</button>
+        </div>
       </div>
 
+      <div class="transaction-summary">
+        <div class="transaction-amount" id="txn-amount">—</div>
+        <div class="meta-grid">
+          <span class="detail-label">Error</span><span id="txn-error" class="detail-val">—</span>
+          <span class="detail-label">Payment Link</span><span id="txn-link" class="detail-val">—</span>
+          <span class="detail-label">Attempts used</span><span id="txn-attempts" class="detail-val">—</span>
+          <span class="detail-label">Recovery status</span><span id="txn-recovery-status" class="detail-val">—</span>
+          <span class="detail-label">Next allowed at</span><span id="txn-next-allowed" class="detail-val">—</span>
+          <span class="detail-label">Net recovered</span><span id="txn-net" class="detail-val">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI DECISION (step 1-2: Diagnose, Predict) — the visual
+         center of the page: elevated surface, safe-blue accent bar,
+         five-field decision strip. -->
+    <div class="panel ai-panel">
+      <div class="panel-header">
+        <h3>AI decision</h3>
+        <button class="primary" id="analyze-btn">Analyze · Generate recommendation</button>
+      </div>
+      <div class="honesty-note" id="ai-context">Customer context appears after Analyze runs.</div>
+
+      <div class="decision-stats">
+        <div class="decision-stat">
+          <div class="stat-label">Diagnosis</div>
+          <div class="stat-value" id="ai-diagnosis">—</div>
+        </div>
+        <div class="decision-stat">
+          <div class="stat-label">Confidence</div>
+          <div class="stat-value" id="ai-confidence">—</div>
+        </div>
+        <div class="decision-stat">
+          <div class="stat-label">Method</div>
+          <div class="stat-value" id="ai-method">—</div>
+        </div>
+        <div class="decision-stat accent">
+          <div class="stat-label">Selected action</div>
+          <div class="stat-value" id="ai-action">—</div>
+        </div>
+        <div class="decision-stat">
+          <div class="stat-label">Approved discount</div>
+          <div class="stat-value" id="ai-discount">—</div>
+        </div>
+      </div>
+
+      <div class="reasoning-box" id="ai-reasoning">Run Analyze to produce a decision.</div>
+      <p class="honesty-note" style="margin-top: var(--sp-3);">P(recovery) values come from a model trained on <b>simulated</b> intervention outcomes (documented assumptions), not real-world labels.</p>
+    </div>
+
+    <!-- CANDIDATE ACTIONS / EV + GUARDRAILS (step 3-4) -->
+    <div class="intel-grid">
       <div class="panel detail-panel">
         <div class="panel-header"><h3>Candidate actions — Expected Value</h3></div>
         <table class="ev-table" id="ev-table">
@@ -73,13 +120,40 @@
         <div class="panel-header"><h3>Guardrail checks (deterministic)</h3></div>
         <ul class="guardrail-list" id="guardrails"><li class="loading">No decision yet.</li></ul>
       </div>
+    </div>
 
-      <div class="panel detail-panel">
-        <div class="panel-header"><h3>Customer message / call script</h3></div>
-        <div class="message-box" id="message-box">Generated when a message action executes.</div>
-        <p class="honesty-note">The LLM only drafts message text (policy-grounded generation). It never chooses the financial action — the EV engine recommends and deterministic guardrails authorize.</p>
+    <!-- EXECUTE (step 5) — a deliberate amber accent bar, not a
+         warning banner: this is a considered, authorized action. -->
+    <div class="panel execute-panel">
+      <div class="panel-header">
+        <h3>Execute recovery action</h3>
+        <button class="btn-execute" id="execute-btn">Execute recovery action</button>
+      </div>
+      <p class="honesty-note">Creates a real (or mock) Razorpay Payment Link at the guardrail-approved amount, or drafts a message/call script. This is the only step that contacts the customer or spends discount budget.</p>
+      <div id="flash"></div>
+    </div>
+
+    <!-- VERIFY / OUTCOME (step 6) — slim inline section, not a
+         full padded card, since it's just two actions + a status line. -->
+    <div class="verify-section">
+      <div class="verify-copy">
+        <h3>Verification / outcome</h3>
+        <p class="honesty-note">Verify pulls the live Payment Link status from Razorpay. Mock-pay (mock mode only) drives the real, signature-verified webhook path — it never fakes state client-side.</p>
+      </div>
+      <div class="action-buttons">
+        <button class="btn-utility" id="verify-btn">Verify payment</button>
+        <button class="btn-utility" id="mock-pay-btn" style="display:none">Simulate customer paying (mock)</button>
       </div>
     </div>
+
+    <!-- CUSTOMER MESSAGE — available, but deliberately quiet so it
+         never competes with the financial decision above it. -->
+    <div class="message-section">
+      <h4>Customer message / call script</h4>
+      <div class="message-box" id="message-box">Generated when a message action executes.</div>
+      <p class="honesty-note" style="margin-top: var(--sp-2);">The LLM only drafts message text (policy-grounded generation). It never chooses the financial action — the EV engine recommends and deterministic guardrails authorize.</p>
+    </div>
+
   </main>
 </div>
 <script src="common.js"></script>

@@ -14,6 +14,9 @@
       <a class="nav-item" href="index.html">Dashboard</a>
       <a class="nav-item active" href="recoveries.html">Recoveries</a>
     </nav>
+    <div class="sidebar-bottom">
+      <span class="honesty-note" id="mode-note"></span>
+    </div>
   </aside>
   <main class="main">
     <div class="panel-header"><h2>Recoveries</h2></div>
@@ -33,21 +36,24 @@
 <script src="common.js"></script>
 <script>
 (async () => {
-  const rows = await api("/recoveries");
+  try {
+    const h = await api("/health");
+    document.getElementById("mode-note").innerHTML = modeBannerHtml(h.mock_mode);
+  } catch (e) {
+    document.getElementById("mode-note").textContent = "Status unavailable";
+  }
+
   const tbody = document.querySelector("#rec-table tbody");
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="9" class="loading">No recoveries yet.</td></tr>`; return; }
-  tbody.innerHTML = rows.map(t => `
-    <tr>
-      <td class="mono">${t.payment_id}</td>
-      <td>${fmt(t.diagnosis)}</td>
-      <td>${fmt(t.chosen_action)}</td>
-      <td>${stateBadge(t.recovery_state)}</td>
-      <td>${inr(t.amount, t.currency)}</td>
-      <td>${t.discount_amount ? inr(t.discount_amount) : "—"}</td>
-      <td>${t.net_recovered_amount ? inr(t.net_recovered_amount) : "—"}</td>
-      <td>${t.recovery_link ? `<a href="${t.recovery_link}" target="_blank">link</a>` : "—"}</td>
-      <td><a href="transaction.html?payment_id=${encodeURIComponent(t.payment_id)}">Open →</a></td>
-    </tr>`).join("");
+  try {
+    const rows = await api("/recoveries");
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="9" class="loading">No recoveries yet.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map(t => txnRow(t, true)).join("");
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="9" class="loading">Couldn't load recoveries — ${e.message}</td></tr>`;
+  }
 })();
 </script>
 </body>

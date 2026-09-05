@@ -1,18 +1,71 @@
 const paymentId = new URLSearchParams(window.location.search).get("payment_id");
 let mockMode = false;
 
+// Maps each real lifecycle state to how far the fixed pipeline has
+// progressed, so the flow legend doubles as a live progress
+// indicator rather than static decoration.
+const STATE_STEP = {
+  AT_RISK: 0,
+  DIAGNOSED: 2,
+  DECISION_READY: 3,
+  GUARDRAIL_APPROVED: 4,
+  ACTION_INITIATED: 5,
+  AWAITING_OUTCOME: 5,
+  RECOVERED: 6,
+  FAILED: 6,
+  RE_EVALUATE: 2,
+  STOPPED: 4,
+};
+
+function updateFlowLegend(state) {
+  const reached = STATE_STEP[state] ?? 0;
+  document.querySelectorAll("#flow-legend .step").forEach(el => {
+    const n = Number(el.dataset.step);
+    el.classList.toggle("done", n < reached);
+    el.classList.toggle("current", n === reached);
+  });
+}
+
 function flash(msg, isError = false) {
   const el = document.getElementById("flash");
   el.textContent = msg;
-  el.style.color = isError ? "#ff7b72" : "#7ce38b";
+  el.style.color = isError ? "var(--danger)" : "var(--success)";
+}
+
+async function loadMode() {
+  try {
+    const h = await api("/health");
+    mockMode = h.mock_mode;
+    document.getElementById("mode-note").innerHTML = modeBannerHtml(h.mock_mode);
+    if (mockMode) document.getElementById("mock-pay-btn").style.display = "";
+  } catch (e) {
+    document.getElementById("mode-note").textContent = "Status unavailable";
+  }
+}
+
+// The backend only attaches `message` to the execute response when the
+// selected action actually is a message/call action (see groq_client.py).
+// This just makes that existing signal explicit in the UI instead of
+// leaving the placeholder text unchanged when it doesn't apply.
+function renderMessage(message) {
+  const box = document.getElementById("message-box");
+  if (message) {
+    box.textContent = message.text +
+      `\n\n[generator: ${message.generator} · grounded on: ${message.grounded_on}]`;
+    box.classList.add("has-message");
+  } else {
+    box.textContent = "Not applicable for this recovery action.\n\n" +
+      "Customer communication is generated only when RevLoop selects a message or call action.";
+    box.classList.remove("has-message");
+  }
 }
 
 function renderDecision(d) {
   if (d.customer_context) {
     const c = d.customer_context;
-    document.getElementById("ai-context").textContent =
+    document.getElementById("ai-context").innerHTML =
       `${c.prior_success_count} prior successes · ${c.customer_tenure_days}d tenure · ` +
-      `${c.recent_failure_count} recent failures [${c.provenance}]`;
+      `${c.recent_failure_count} recent failures` + provenanceTag(c.provenance);
   }
   document.getElementById("ai-diagnosis").textContent = fmt(d.diagnosis);
   document.getElementById("ai-confidence").textContent =
@@ -39,13 +92,15 @@ function renderDecision(d) {
   if (d.guardrail_checks && d.guardrail_checks.length) {
     gl.innerHTML = d.guardrail_checks.map(c =>
       `<li class="${c.passed ? "guardrail-pass" : "guardrail-fail"}">
-         ${c.passed ? "✓" : "✗"} ${c.rule} — ${c.detail}</li>`).join("");
+         <span>${c.passed ? "✓" : "✗"}</span>
+         <span><span class="g-rule">${c.rule}</span> <span class="g-detail">— ${c.detail}</span></span></li>`).join("");
   }
 }
 
 function renderTxn(t) {
   document.getElementById("txn-title").textContent = t.payment_id;
   document.getElementById("txn-state").innerHTML = stateBadge(t.recovery_state);
+  updateFlowLegend(t.recovery_state);
   document.getElementById("txn-amount").textContent = inr(t.amount, t.currency);
   document.getElementById("txn-error").textContent =
     (t.error_code || "—") + (t.error_description ? " · " + t.error_description : "");
@@ -79,8 +134,7 @@ async function execute() {
     const d = await api(`/decision/execute/${paymentId}`, { method: "POST" });
     renderDecision(d);
     document.getElementById("txn-next-allowed").textContent = d.next_allowed_at || "now";
-    if (d.message) document.getElementById("message-box").textContent =
-      d.message.text + `\n\n[generator: ${d.message.generator} · grounded on: ${d.message.grounded_on}]`;
+    if (d.status === "action_initiated") renderMessage(d.message);
     await refresh();
     flash(d.status === "action_initiated"
       ? `Action executed: ${fmt(d.chosen_action)}${d.payment_link ? " → " + d.payment_link : ""}`
@@ -132,8 +186,6 @@ document.getElementById("mock-pay-btn").addEventListener("click", mockPay);
 document.getElementById("optout-btn").addEventListener("click", optOut);
 
 (async () => {
-  const h = await api("/health");
-  mockMode = h.mock_mode;
-  if (mockMode) document.getElementById("mock-pay-btn").style.display = "";
+  await loadMode();
   await refresh();
 })();
