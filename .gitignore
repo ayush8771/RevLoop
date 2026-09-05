@@ -1,0 +1,19 @@
+# secrets
+.env
+
+# python
+__pycache__/
+*.pyc
+venv/
+.venv/
+.pytest_cache/
+
+# runtime artifacts
+*.db
+revloop.db
+test_revloop.db
+audit_runs/*.jsonl
+data/output/
+models/*.pkl
+metrics/metrics.json
+metrics/dashboard.html

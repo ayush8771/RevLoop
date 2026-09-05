@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RevLoop — AI Revenue Recovery Agent</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">R</div>
+      <div><h1>RevLoop</h1><span>Recovery Loop Agent</span></div>
+    </div>
+    <nav>
+      <a class="nav-item active" href="index.html">Dashboard</a>
+      <a class="nav-item" href="recoveries.html">Recoveries</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <span class="honesty-note" id="mode-note"></span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="panel-header">
+      <h2>Revenue Recovery Overview</h2>
+      <div class="action-buttons">
+        <button class="primary" id="seed-btn">+ Create test failed payment</button>
+      </div>
+    </div>
+
+    <div class="metrics" id="metrics">
+      <div class="metric-card"><div class="metric-top"><span class="metric-label">Revenue at risk</span></div><div class="metric-value" id="m-at-risk">—</div></div>
+      <div class="metric-card"><div class="metric-top"><span class="metric-label">Net recovered</span></div><div class="metric-value" id="m-net">—</div></div>
+      <div class="metric-card"><div class="metric-top"><span class="metric-label">Discounts given</span></div><div class="metric-value" id="m-disc">—</div></div>
+      <div class="metric-card"><div class="metric-top"><span class="metric-label">Net recovery rate</span></div><div class="metric-value" id="m-rate">—</div></div>
+    </div>
+    <p class="honesty-note">Net recovered = gross − discounts. A ₹10,000 order recovered with a 10% discount counts as ₹9,000, not ₹10,000.</p>
+
+    <div class="panel transactions-panel">
+      <div class="panel-header"><h3>Failed payments</h3></div>
+      <div class="table-wrapper">
+        <table class="ev-table" id="txn-table">
+          <thead><tr>
+            <th>Payment</th><th>Amount</th><th>Error</th><th>Diagnosis</th>
+            <th>Action</th><th>State</th><th>Net recovered</th><th></th>
+          </tr></thead>
+          <tbody><tr><td colspan="8" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="common.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

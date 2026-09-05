@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>RevLoop — Recoveries</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-mark">R</div>
+      <div><h1>RevLoop</h1><span>Recovery Loop Agent</span></div></div>
+    <nav>
+      <a class="nav-item" href="index.html">Dashboard</a>
+      <a class="nav-item active" href="recoveries.html">Recoveries</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="panel-header"><h2>Recoveries</h2></div>
+    <div class="panel transactions-panel">
+      <div class="table-wrapper">
+        <table class="ev-table" id="rec-table">
+          <thead><tr>
+            <th>Payment</th><th>Diagnosis</th><th>Action</th><th>State</th>
+            <th>Gross</th><th>Discount</th><th>Net recovered</th><th>Link</th><th></th>
+          </tr></thead>
+          <tbody><tr><td colspan="9" class="loading">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="common.js"></script>
+<script>
+(async () => {
+  const rows = await api("/recoveries");
+  const tbody = document.querySelector("#rec-table tbody");
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="9" class="loading">No recoveries yet.</td></tr>`; return; }
+  tbody.innerHTML = rows.map(t => `
+    <tr>
+      <td class="mono">${t.payment_id}</td>
+      <td>${fmt(t.diagnosis)}</td>
+      <td>${fmt(t.chosen_action)}</td>
+      <td>${stateBadge(t.recovery_state)}</td>
+      <td>${inr(t.amount, t.currency)}</td>
+      <td>${t.discount_amount ? inr(t.discount_amount) : "—"}</td>
+      <td>${t.net_recovered_amount ? inr(t.net_recovered_amount) : "—"}</td>
+      <td>${t.recovery_link ? `<a href="${t.recovery_link}" target="_blank">link</a>` : "—"}</td>
+      <td><a href="transaction.html?payment_id=${encodeURIComponent(t.payment_id)}">Open →</a></td>
+    </tr>`).join("");
+})();
+</script>
+</body>
+</html>
